@@ -1,5 +1,6 @@
 var path = require("path");
 var express = require("express");
+var http = require("http");
 var app = express();
 
 // 設定 view engine
@@ -9,13 +10,34 @@ app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 設定 server
-var server = app.listen(process.env.PORT || 3000, function(){
+var server = app.listen(process.env.PORT || 3006, function(){
     var host = server.address().address;
     var port = server.address().port;
 });
 
 // 設定 socket.io
 io = require("socket.io")(server);
+
+//sql connect
+var mysql = require('mysql');
+var db_option = mysql.createConnection({
+    host: '123.207.232.68',
+    user: 'webprogramming',
+    password: 'team4',
+    database: 'webProgramming',
+    port: 3306
+});
+
+var sql = 'SELECT * FROM question_table;';
+
+db_option.connect()
+
+function querytest(callback){
+    db_option.query(sql, function(err, row, fields){
+        callback(null,row);
+    });
+}
+
 
 function openChannel(io, channel){
     if (io.nsps["/" + channel]){
@@ -48,7 +70,11 @@ app.get("/", function(req, res, next){
         res.render("host", {channel: req.query.channel});
         return;
     }
-    res.render("host", {channel: null});
+    db_option.query(sql, function(err, rows){
+        var data = rows;
+        res.render('host', {channel: null, title: 'query_info', data:data});
+    });
+    //res.render("host", {channel: null});
     return;
 });
 
